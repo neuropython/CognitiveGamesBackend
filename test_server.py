@@ -48,8 +48,11 @@ print(requests.get('http://127.0.0.1:8000/users/1', headers=headers).text)
 # response = requests.get('http://127.0.0.1:8000/users/1/games')
 # print(response.text)
 
-login = requests.post('http://127.0.0.1:8000/token', data={"username": "johndoe", "password": "secret"})
-print(login.text)    
+# login = requests.post('http://127.0.0.1:8000/token', data={"username": "johndoe", "password": "secret"})
+# print(login.text)    
 
 # response_me = requests.get('http://127.0.0.1:8000/me', headers=headers)
 # print(response_me.text)
+
+login = requests.post('http://127.0.0.1:8000/refresh_token', headers=headers)
+print(login.text)  
