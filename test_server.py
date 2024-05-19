@@ -10,13 +10,14 @@ print(requests.get('http://127.0.0.1:8000').text)
 # print(requests.get('http://127.0.0.1:8000/users/1').text)
 
 # response = requests.post("http://127.0.0.1:8000/users", json={
-#     "id": 2,
+#     "id": 1,
 #     "first_name": "John",
 #     "last_name": "Doe",
 #     "email": "johndoe@example.com",
 #     "password": "secret",
 #     "username": "johndoe"
 # })
+# print(response.text)
 
 # print(requests.get('http://127.0.0.1:8000/users').text)
 
@@ -44,3 +45,10 @@ print(requests.get('http://127.0.0.1:8000').text)
 
 # response = requests.get('http://127.0.0.1:8000/users/1/games')
 # print(response.text)
+
+# login = requests.post('http://127.0.0.1:8000/token', data={"username": "johndoe", "password": "secret"})
+# print(login.text)    
+
+headers = {"Authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJqb2huZG9lIiwiZXhwIjoxNzE2MTQ5NzQyfQ.63hgbdDpfTD6ITWiOA01Zfs7wOmQsKilTliw083d-Rc"}
+response_me = requests.get('http://127.0.0.1:8000/me', headers=headers)
+print(response_me.text)
