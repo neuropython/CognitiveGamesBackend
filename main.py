@@ -10,6 +10,27 @@ from bson import ObjectId
 from fastapi.exceptions import HTTPException
 from urllib.parse import quote_plus
 from datetime import datetime
+from passlib.context import CryptContext
+
+
+## Security
+SECRET_KEY = os.getenv("SECRET_KEY")
+ALGORITHM = os.getenv("ALGORITHM")
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
+def verify_password(plain_password, hashed_password):
+    return pwd_context.verify(plain_password, hashed_password)
+
+def get_password_hash(password):
+    return pwd_context.hash(password)
+
+def authenticate_user(username: str, password: str):
+    user = users_collection.find_one({"username": username})
+    if not user:
+        return False
+    if not verify_password(password, user["hashed_password"]):
+        return False
+    return user
 
 app = FastAPI(debug=True)
 load_dotenv()
@@ -28,8 +49,11 @@ class User(BaseModel):
     first_name: str
     last_name: str
     email: EmailStr
-    password: str
+    password: str 
     username: str
+
+class UserInDB(User):
+    hashed_password: str
 
 class Games(BaseModel):
     id: int
@@ -64,8 +88,15 @@ except Exception as e:
 def read_root():
     return {"CogniBackendApp"}
 
+@app.post("login")
+async def login(username: str, password: str):
+    user = authenticate_user(username, password)
+    if not user:
+        raise HTTPException(status_code=401, detail="Invalid username or password")
+    return user
+
 @app.get("/users/{user_id}", response_model=User)
-def read_user(user_id: int) -> Union[User, HTTPException]:
+async def read_user(user_id: int) -> Union[User, HTTPException]:
     """Get a user by ID"""
     user = users_collection.find_one({"id": user_id})
     if user is None:
@@ -73,50 +104,52 @@ def read_user(user_id: int) -> Union[User, HTTPException]:
     return user
 
 @app.get("/users")
-def read_users() -> List[User]:
+async def read_users() -> List[User]:
     """Get all users"""
     users = users_collection.find()
     return list(users)
 
 @app.get("/users/{user_id}/games")
-def read_user_games(user_id: int) -> List[UserGames]:
+async def read_user_games(user_id: int) -> List[UserGames]:
     """Get all games for a user by ID"""
+    user = users_collection.find_one({"id": user_id})
+    if user is None:
+        raise HTTPException(status_code=404, detail="User not found")
     user_games = user_games_collection.find({"user_id": user_id})
     return list(user_games)
 
-@app.get("/users/{user_id}/games/{game_id}")
-def read_user_game(user_id: int, game_id: int) -> UserGames:
-    """Get a user game by user ID and game ID"""
-    return {"user_id": user_id, "game_id": game_id}
-
 @app.get("/games")
-def read_games() -> List[Games]:
+async def read_games() -> List[Games]:
     """Get all games"""
     games = games_collection.find()
     return list(games)
 
 @app.post("/users")
-def create_user(user: User) -> User:
+async def create_user(user: User) -> User:
     """Create a new user"""
     id = user.id
     check_user_exists(id)
+
+    hashed_password = pwd_context.hash(user.password)
+    user.password = hashed_password
+
     users_collection.insert_one(user.dict())
     return user
 
-def check_user_exists(id: str):
+async def check_user_exists(id: str) -> None:
     """Check if a user exists in the database"""
     user = users_collection.find_one({"id": id})
     if user is not None:
         raise HTTPException(status_code=400, detail="User already exists")
 
 @app.post("/games")
-def create_game(game: Games) -> Games:
+async def create_game(game: Games) -> Games:
     """Create a new game"""
     games_collection.insert_one(game.dict())
     return game
 
 @app.post("/users/{user_id}/games/{game_id}")
-def create_user_game(user_id: int, game_id: int, game: UserGames) -> UserGames:
+async def create_user_game(user_id: int, game_id: int, game: UserGames) -> UserGames:
     """Create a new user game"""
     user = users_collection.find_one({"id": user_id})
     games = games_collection.find_one({"id":game_id})
