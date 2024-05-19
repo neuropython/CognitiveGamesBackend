@@ -9,6 +9,7 @@ from pymongo import MongoClient
 from bson import ObjectId
 from fastapi.exceptions import HTTPException
 from urllib.parse import quote_plus
+from datetime import datetime
 
 app = FastAPI(debug=True)
 load_dotenv()
@@ -34,12 +35,15 @@ class Games(BaseModel):
     id: int
     game_type: GameTypes
 
+    class Config:
+        use_enum_values = True
+
 class UserGames(BaseModel):
     id: int
     user_id: int
     game_id: int
     score: int
-    date: str
+    date: datetime
 
 ### Connect to MongoDB:
 client = MongoClient(MONGO_URI)
@@ -62,6 +66,7 @@ def read_root():
 
 @app.get("/users/{user_id}", response_model=User)
 def read_user(user_id: int) -> Union[User, HTTPException]:
+    """Get a user by ID"""
     user = users_collection.find_one({"id": user_id})
     if user is None:
         raise HTTPException(status_code=404, detail="User not found")
@@ -69,24 +74,55 @@ def read_user(user_id: int) -> Union[User, HTTPException]:
 
 @app.get("/users")
 def read_users() -> List[User]:
-    return {"users": "all"}
+    """Get all users"""
+    users = users_collection.find()
+    return list(users)
 
 @app.get("/users/{user_id}/games")
 def read_user_games(user_id: int) -> List[UserGames]:
-    return {"user_id": user_id}
+    """Get all games for a user by ID"""
+    user_games = user_games_collection.find({"user_id": user_id})
+    return list(user_games)
 
 @app.get("/users/{user_id}/games/{game_id}")
 def read_user_game(user_id: int, game_id: int) -> UserGames:
+    """Get a user game by user ID and game ID"""
     return {"user_id": user_id, "game_id": game_id}
+
+@app.get("/games")
+def read_games() -> List[Games]:
+    """Get all games"""
+    games = games_collection.find()
+    return list(games)
 
 @app.post("/users")
 def create_user(user: User) -> User:
+    """Create a new user"""
     id = user.id
     check_user_exists(id)
     users_collection.insert_one(user.dict())
     return user
 
 def check_user_exists(id: str):
-    user = users_collection.find_one({"_id": id})
+    """Check if a user exists in the database"""
+    user = users_collection.find_one({"id": id})
     if user is not None:
         raise HTTPException(status_code=400, detail="User already exists")
+
+@app.post("/games")
+def create_game(game: Games) -> Games:
+    """Create a new game"""
+    games_collection.insert_one(game.dict())
+    return game
+
+@app.post("/users/{user_id}/games/{game_id}")
+def create_user_game(user_id: int, game_id: int, game: UserGames) -> UserGames:
+    """Create a new user game"""
+    user = users_collection.find_one({"id": user_id})
+    games = games_collection.find_one({"id":game_id})
+    if user is None :
+        raise HTTPException(status_code=404, detail="User not found")
+    if games is None:
+        raise HTTPException(status_code=404, detail="Game not found")
+    user_games_collection.insert_one(game.dict())
+    return game
