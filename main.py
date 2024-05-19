@@ -20,11 +20,12 @@ _password = quote_plus(str(os.getenv("MONGO_PASSWORD")))
 _username = quote_plus(str(os.getenv("MONGO_USERNAME")))
 MONGO_URI = f"mongodb+srv://{_username}:{_password}@cognitivedatabase.ivg4g6i.mongodb.net/?retryWrites=true&w=majority&appName=CognitiveDatabase"
 
-## Security
+################################# SECURITY #################################
 SECRET_KEY = os.getenv("SECRET_KEY")
 ALGORITHM = os.getenv("ALGORITHM")
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
+
 # Hashing functions
 def verify_password(plain_password, hashed_password):
     return pwd_context.verify(plain_password, hashed_password)
@@ -40,7 +41,7 @@ def authenticate_user(username: str, password: str):
         return False
     return user
 
-# JWT 
+################################# JWT #################################
 JWT_SECRET = os.getenv("JWT_SECRET")
 EXPIRATION_TIME = os.getenv("EXPIRATION_TIME")
 
@@ -53,8 +54,7 @@ class TokenData(BaseModel):
     user_id: int | None = None
 
 def create_access_token(data: dict, expires_delta: timedelta | None = None):
-    data_dict = data.get()
-    to_encode = data_dict.copy()
+    to_encode = data.copy()
     if expires_delta:
         expire = datetime.now() + expires_delta
     else:
@@ -82,7 +82,7 @@ async def get_current_user(token: Annotated[str, Depends(oauth2_scheme)]):
     if user is None:
         raise credentials_exception
     return user
-## Define database_models:
+################################# MODELS #################################
 
 class GameTypes(Enum):
     color_game = "color_game"
@@ -110,13 +110,14 @@ class UserGames(BaseModel):
     game_id: int
     score: int
     date: datetime
-### serializers:
+
+################################# SERIALIZERS #################################
 def hide_password_serializer(user):
     user_dict = user.dict()
     user_dict["password"] = "********"
     return user_dict
 
-### Connect to MongoDB:
+################################# DATABASE #################################
 client = MongoClient(MONGO_URI)
 db = client["Data"]
 
@@ -130,7 +131,7 @@ try:
 except Exception as e:
     print("Cannot connect to MongoDB: ", e)
 
-### Define API endpoints:
+################################# ROUTES #################################
 @app.get("/")
 def read_root():
     return {"CogniBackendApp"}
@@ -143,9 +144,12 @@ async def login(username: str, password: str):
     return user
 
 @app.get("/users/{user_id}", response_model=User)
-async def read_user(user_id: int) -> Union[User, HTTPException]:
+async def read_user(user_id: int, token: str = Depends(oauth2_scheme)) -> Union[User, HTTPException]:
     """Get a user by ID"""
     user = users_collection.find_one({"id": user_id})
+    current_user = await get_current_user(token)
+    if current_user["id"] != user_id:
+        raise HTTPException(status_code=401, detail="Unauthorized")
     if user is None:
         raise HTTPException(status_code=404, detail="User not found")
     return user
@@ -222,6 +226,6 @@ async def login_for_access_token(
     return {"access_token": access_token, "token_type": "bearer"} 
 
 @app.get("/me")
-async def read_users_me(current_user: dict = Depends(get_current_user), response_model=User):
+async def read_users_me(current_user: dict = Depends(get_current_user)):
     user_without_id = {k: v for k, v in current_user.items() if k != '_id' and k != 'password'}
     return {"user": user_without_id, "message": "You are authorized"}
