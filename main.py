@@ -19,6 +19,7 @@ load_dotenv()
 _password = quote_plus(str(os.getenv("MONGO_PASSWORD")))
 _username = quote_plus(str(os.getenv("MONGO_USERNAME")))
 MONGO_URI = f"mongodb+srv://{_username}:{_password}@cognitivedatabase.ivg4g6i.mongodb.net/?retryWrites=true&w=majority&appName=CognitiveDatabase"
+
 ################################# EXCEPTIONS #################################
 credentials_exception = HTTPException(
         status_code=401,
@@ -33,12 +34,41 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
 # Hashing functions
 def verify_password(plain_password, hashed_password):
+    """
+    Verify the password
+    
+    Args:
+        plain_password (str): The plain password
+        hashed_password (str): The hashed password
+    
+    Returns:
+        bool: True if the password is verified, False otherwise
+    """
     return pwd_context.verify(plain_password, hashed_password)
 
 def get_password_hash(password):
+    """
+    Get the password hash
+    
+    Args:
+        password (str): The password
+    
+    Returns:
+        str: The hashed password
+    """
     return pwd_context.hash(password)
 
 def authenticate_user(username: str, password: str):
+    """
+    Authenticate the user
+    
+    Args:
+        username (str): The username
+        password (str): The password
+        
+    Returns:
+        dict: The user if the user is authenticated, False otherwise
+    """
     user = users_collection.find_one({"username": username})
     if not user:
         return False
@@ -50,6 +80,13 @@ def authenticate_user(username: str, password: str):
 JWT_SECRET = os.getenv("JWT_SECRET")
 EXPIRATION_TIME = os.getenv("EXPIRATION_TIME")
 
+"""
+Models classes are not going to be covered in documentation 
+since they are not endpoints but rather classes that are used
+to define the structure of the data that is being passed around
+in the application.
+"""
+
 class Token(BaseModel):
     access_token: str
     token_type: str
@@ -58,7 +95,17 @@ class TokenData(BaseModel):
     username: str | None = None
     user_id: int | None = None
 
-def create_access_token(data: dict, expires_delta: timedelta | None = None):
+def create_access_token(data: dict, expires_delta: timedelta | None = None) -> str:
+    """
+    Create an access token
+    
+    Args:
+        data (dict): The data to encode
+        expires_delta (timedelta): The expiration time
+    
+    Returns:
+        str: The encoded JWT token
+    """
     to_encode = data.copy()
     if expires_delta:
         expire = datetime.now() + expires_delta
@@ -68,7 +115,19 @@ def create_access_token(data: dict, expires_delta: timedelta | None = None):
     encoded_jwt = jwt.encode(to_encode, JWT_SECRET, algorithm=ALGORITHM)
     return encoded_jwt
 
-async def get_current_user(token: Annotated[str, Depends(oauth2_scheme)]):
+async def get_current_user(token: Annotated[str, Depends(oauth2_scheme)]) -> dict:
+    """
+    Get the current user
+    
+    Args:
+        token (str): The token
+    
+    Returns:
+        dict: The user
+    
+    Raises:
+        credentials_exception: If the credentials are invalid
+    """
     try:
         payload = jwt.decode(token, JWT_SECRET, algorithms=[ALGORITHM])
         username: str = payload.get("sub")
@@ -112,6 +171,15 @@ class UserGames(BaseModel):
 
 ################################# SERIALIZERS #################################
 def hide_password_serializer(user):
+    """
+    Hide the password
+    
+    Args:
+        user (User): The user
+    
+    Returns:
+        dict: The user with the password hidden
+    """
     user_dict = user.dict()
     user_dict["password"] = "********"
     return user_dict
@@ -133,18 +201,51 @@ except Exception as e:
 ################################# ROUTES #################################
 @app.get("/")
 def read_root():
-    return {"CogniBackendApp"}
+    """
+    # Get the root
 
-@app.post("login")
-async def login(username: str, password: str):
-    user = authenticate_user(username, password)
-    if not user:
-        raise HTTPException(status_code=401, detail="Invalid username or password")
-    return user
+    This endpoint returns the root of the API.
+
+    ## Returns
+
+    - `dict`: The root
+
+    ## Comments
+
+    This is the root of the API.
+    Api is protected by JWT token.
+
+    ## Common headers
+
+    - "Authorization" : "Bearer 'your_valid_token'"
+    """
+    return {"CogniBackendApp"}
 
 @app.get("/users/{user_id}", response_model=User)
 async def read_user(user_id: int, token: str = Depends(oauth2_scheme)) -> Union[User, HTTPException]:
-    """Get a user by ID"""
+    """
+    # Read a user
+
+    This endpoint reads a user based on the provided user ID.
+
+    ## Parameters
+
+    - `user_id` (int): The user ID (inside the URL)
+    - `token` (str): The token (header)
+
+    ## Returns
+
+    - `Union[User, HTTPException]`: The user or an HTTPException
+
+    ## Raises
+
+    - `HTTPException`: If the user is not found
+    - `HTTPException`: If the user is unauthorized
+
+    ## Authorization
+
+    - Bearer Token (header)
+    """
     user = users_collection.find_one({"id": user_id})
     current_user = await get_current_user(token)
     if current_user["id"] != user_id:
@@ -155,14 +256,48 @@ async def read_user(user_id: int, token: str = Depends(oauth2_scheme)) -> Union[
 
 @app.get("/users")
 async def read_users() -> List[User]:
-    """Get all users"""
+    """
+    # Read users
+    
+    This endpoint reads all users.
+    
+    ## Returns
+    
+    - `List[User]`: The list of users
+    
+    ## Comments
+    
+    unauthorized access
+    
+    """
     users = users_collection.find()
     return list(users)
 
 @app.get("/users/{user_id}/games")
-async def read_user_games(user_id: int) -> List[UserGames]:
-    """Get all games for a user by ID"""
+async def read_user_games(user_id: int,token: str = Depends(oauth2_scheme)) -> List[UserGames]:
+    """
+    # Read user games
+    
+    This endpoint reads all games related to a user.
+    
+    ## Parameters
+    
+    - `user_id` (int): The user ID (inside the URL)
+    - `token` (str): The token (header)
+    
+    ## Returns
+    
+    - `List[UserGames]`: The list of games
+    
+    ## Raises
+    
+    - `HTTPException`: If the user is not found
+    - `HTTPException`: If the user is unauthorized
+    """
     user = users_collection.find_one({"id": user_id})
+    curret_user = await get_current_user(token)
+    if curret_user["id"] != user_id:
+        raise HTTPException(status_code=401, detail="Unauthorized")
     if user is None:
         raise HTTPException(status_code=404, detail="User not found")
     user_games = user_games_collection.find({"user_id": user_id})
@@ -170,13 +305,39 @@ async def read_user_games(user_id: int) -> List[UserGames]:
 
 @app.get("/games")
 async def read_games() -> List[Games]:
-    """Get all games"""
+    """
+    # Read games
+
+    This endpoint reads all games.
+
+    ## Returns
+
+    - `List[Games]`: The list of games
+
+    ## Comments
+
+    unauthorized access
+    you can ge games id from that endpoint
+
+    """
     games = games_collection.find()
     return list(games)
 
 @app.post("/users")
 async def create_user(user: User) -> User:
-    """Create a new user"""
+    """
+    # Create a user
+    
+    This endpoint creates a new user.
+    
+    ## Parameters
+    
+    - `user` (User): The user
+    
+    ## Returns
+    
+    - `User`: The user
+    """
     id = user.id
     user_check = check_user_exists(id)
     if user_check == 1:
@@ -194,26 +355,92 @@ def check_user_exists(id: str) -> None:
 
 @app.post("/games")
 async def create_game(game: Games) -> Games:
-    """Create a new game"""
+    """
+    
+    # Create a game
+    
+    This endpoint creates a new game.
+    
+    ## Parameters
+    
+    - `game` (Games): The game
+    
+    ## Returns
+    
+    - `Games`: The game
+
+    ## Comments
+
+    This endpoint is for backend use only.
+    
+    """
     games_collection.insert_one(game.dict())
     return game
 
-@app.post("/users/{user_id}/games/{game_id}")
-async def create_user_game(user_id: int, game_id: int, game: UserGames) -> UserGames:
-    """Create a new user game"""
-    user = users_collection.find_one({"id": user_id})
+@app.post("/add_new_score")
+async def create_user_game(score: UserGames, token: str = Depends(oauth2_scheme)) -> UserGames:
+    """
+    # Create a user game
+    
+    This endpoint creates a new user game.
+    
+    ## Parameters
+    
+    - `score` (UserGames): The user game
+    - `token` (str): The token (header)
+    
+    ## Returns
+    
+    - `UserGames`: The user game
+
+    ## Raises
+
+    - `HTTPException`: If the user is not found
+    - `HTTPException`: If the game is not found
+    - `HTTPException`: If the user is unauthorized
+    
+    ## Authorization
+
+    - Bearer Token (header)
+
+    ## Comments
+
+    datetime is automatically added to the score
+    """
+    user = await get_current_user(token)
+    if score.user_id != user["id"]:
+        raise HTTPException(status_code=401, detail="Unauthorized")
+    game_id = score.game_id
     games = games_collection.find_one({"id":game_id})
     if user is None :
         raise HTTPException(status_code=404, detail="User not found")
     if games is None:
         raise HTTPException(status_code=404, detail="Game not found")
-    user_games_collection.insert_one(game.dict())
-    return game
+    user_games_collection.insert_one(score.dict())
+    return score
 
-@app.post("/token", response_model=Token)
+@app.post("/login", response_model=Token)
 async def login_for_access_token(
     form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
 ) -> Token:
+    """
+    # Login
+    
+    This endpoint logs in the user and returns an access token.
+    
+    ## Parameters
+    
+    - `form_data` (OAuth2PasswordRequestForm): The form data
+        - Example: `data={"username": "johndoe", "password": "secret"}`
+    
+    ## Returns
+    
+    - `Token`: The token
+    
+    ## Raises
+
+    - `HTTPException`: If the username or password is incorrect
+    """
     print(form_data)
     user = authenticate_user(form_data.username, form_data.password)
     if not user:
@@ -226,6 +453,32 @@ async def login_for_access_token(
 
 @app.post("/refresh_token", response_model=Token)
 async def refresh_token(token: str = Depends(oauth2_scheme)):
+    """
+    # Refresh token
+    
+    This endpoint refreshes the token.
+    
+    ## Parameters
+    
+    - `token` (str): The token (header)
+    
+    ## Returns
+    
+    - `Token`: The token
+    
+    ## Raises
+    
+    - `HTTPException`: If the token is invalid
+    
+    ## Authorization
+    
+    - Bearer Token (header)
+    
+    ## Comments
+    
+    This endpoint is used to refresh the token. But it is only valid for 15 minutes.
+    It is because refresh token doesnt exist in this project. Only access token is used.
+    """
     payload = jwt.decode(token, JWT_SECRET, algorithms=[ALGORITHM])
     username: str = payload.get("sub")
     if username is None:
@@ -241,5 +494,45 @@ async def refresh_token(token: str = Depends(oauth2_scheme)):
 
 @app.get("/me")
 async def read_users_me(current_user: dict = Depends(get_current_user)):
+    """
+    # Read current user
+    
+    This endpoint reads the current user.
+    
+    ## Parameters
+    
+    - `current_user` (dict): The current user
+    
+    ## Returns
+    
+    - `dict`: The user
+    
+    ## Comments
+    
+    This endpoint is used to get the current user. You can get id of the user from here.
+    it may be used in other endpoints.
+    """
     user_without_id = {k: v for k, v in current_user.items() if k != '_id' and k != 'password'}
     return {"user": user_without_id, "message": "You are authorized"}
+
+@app.get("/all_scores/{game_id}")
+async def read_all_scores(game_id: int) -> List[UserGames]:
+    """
+    # Read all scores
+    
+    This endpoint reads all scores.
+    
+    ## Returns
+    
+    - `List[UserGames]`: The list of scores
+    
+    ## Comments
+    
+    unauthorized access
+    
+    """
+    game = games_collection.find_one({"id": game_id})
+    if game is None:
+        raise HTTPException(status_code=404, detail="Game not found")
+    scores = user_games_collection.find({"game_id": game_id})
+    return list(scores)
