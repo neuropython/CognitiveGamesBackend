@@ -175,14 +175,29 @@ class UserGames(BaseModel):
     score: float
     date: datetime
 
+class GameScoreNumber(BaseModel):
+    correctAnswer: List[int]
+    userAnswer: List[int]
+    time: float
+
+class GameScoreColor(BaseModel):
+    correctAnswer: str
+    userAnswer: str
+    time: float
+
+class MemoryGameInput(BaseModel):
+    wrongMatches: int
+    time: float
+
 class ColorGameInput(BaseModel):
-    score_list: List[Tuple[str, str, float]]
+    score_list: List[GameScoreColor]
 
 class CardsGameInput(BaseModel):
-    score_list: List[Tuple[int, float]]
+    score_list: List[MemoryGameInput]
 
 class NumberGameInput(BaseModel):
-    score_list: List[Tuple[List[int], List[int], float]]
+    score_list: List[GameScoreNumber]
+
 ################################# SERIALIZERS #################################
 def hide_password_serializer(user):
     """
@@ -433,13 +448,13 @@ async def create_user_game_color(score: ColorGameInput, token: str = Depends(oau
     score_to_compute = score.score_list
     scores = []
     for one_game in score_to_compute:
-        correct_answers = one_game[0]
-        user_answers = one_game[1]
+        correct_answers = one_game.correctAnswer
+        user_answers = one_game.userAnswer
         if user_answers == correct_answers:
             current_score = 1
         else:
             current_score = 0
-        _score = current_score * 0.8 +  (-one_game[2]) *0.2
+        _score = current_score * 0.8 +  (-one_game.time) *0.2
         scores.append(_score)
     final_score = sum(scores) + 100
     inserted_document = user_games_collection.insert_one({
@@ -477,11 +492,11 @@ async def create_user_game_number(score: NumberGameInput, token: str = Depends(o
     score_to_compute = score.score_list
     scores = []
     for one_game in score_to_compute:
-        correct_answers = one_game[0]
-        user_answers = one_game[1]
+        correct_answers = one_game.correctAnswer
+        user_answers = one_game.userAnswer
         _correct = sum(c == u for c, u in zip(correct_answers, user_answers))
         correlation = _correct / len(correct_answers)
-        _score = correlation * 0.8 +  (-one_game[2]) *0.2
+        _score = correlation * 0.8 +  (-one_game.time) *0.2
         scores.append(_score)
     final_score = sum(scores) + 100
     inserted_document = user_games_collection.insert_one({
@@ -519,8 +534,8 @@ async def create_user_game_number(score: CardsGameInput, token: str = Depends(oa
     score_to_compute = score.score_list
     scores = []
     for one_game in score_to_compute:
-        uncorrect_answers = one_game[0]
-        _score = - uncorrect_answers * 0.8 -one_game[1] * 0.2
+        uncorrect_answers = one_game.wrongMatches
+        _score = - uncorrect_answers * 0.8 -one_game.time * 0.2
         scores.append(_score)
     final_score = sum(scores) + 100
     inserted_document = user_games_collection.insert_one({

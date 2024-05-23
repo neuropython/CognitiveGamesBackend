@@ -2,7 +2,7 @@ import requests
 from datetime import datetime
 
 # Test the server
-headers = {"Authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJqb2huZG9lIiwiZXhwIjoxNzE2NDc3MTcwfQ.mZnlZx_Rn3Vv-qG_q5NELOGEg8nBAEc1eM9AhKtkPQs"}
+headers = {"Authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJqb2huZG9lIiwiZXhwIjoxNzE2NDk0MzI2fQ.5Vt2pL8lG9AuyLpogj9Dhyi0bjMvM2jgIbIwsdQSDyY"}
 refresh_token_header = {"refresh_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJqb2huZG9lIiwiZXhwIjoxNzE5MDY2MTM2fQ.5d_eMPiimrpWmGyMLC_CSy-qx-NO5NBrTFHpOoAGINc"}
 ### Test the server
 print(requests.get('http://127.0.0.1:8000', headers=headers).text)
@@ -10,20 +10,20 @@ print(requests.get('http://127.0.0.1:8000', headers=headers).text)
 #################### USER ######################3
 
 # get single user
-# print(requests.get('http://127.0.0.1:8000/users/1', headers=headers).text)
+print(requests.get('http://127.0.0.1:8000/users/1', headers=headers).text)
 
 # get all users
 # print(requests.get('http://127.0.0.1:8000/users'))
 
 # create user
-response = requests.post("http://127.0.0.1:8000/users", json={
-    "first_name": "Johnathan",
-    "last_name": "Doepe",
-    "email": "johndoepe@example.com",
-    "password": "secret1",
-    "username": "johndoepe"
-})
-print(response.text)
+# response = requests.post("http://127.0.0.1:8000/users", json={
+#     "first_name": "Johnathan",
+#     "last_name": "Doepe",
+#     "email": "johndoepe@example.com",
+#     "password": "secret1",
+#     "username": "johndoepe"
+# })
+# print(response.text)
 
 ### Test game endpoints ###
 
@@ -61,27 +61,22 @@ print(response.text)
 
 # response = requests.post('http://127.0.0.1:8000/add_new_score/number_game', headers=headers, json={
 #       "score_list": [
-#         ([0, 1], [1, 1], 1),
-#         ([1, 0], [0, 1], 2),
-#         # add more tuples as needed
+#         {"correctAnswer": [1], "userAnswer": [1], "time": 1},
 #     ]
 # })
 # print(response.text)
 
 # response = requests.post('http://127.0.0.1:8000/add_new_score/color_game', headers=headers, json={
 #       "score_list": [
-#         ("yellow", "red", 1),
-#         ("yellow", "yellow", 2),
-#         # add more tuples as needed
+#           {"correctAnswer": "red", "userAnswer": "red", "time": 1},
 #     ]
 # })
 # print(response.text)
 
 # response = requests.post('http://127.0.0.1:8000/add_new_score/memory_game', headers=headers, json={
 #       "score_list": [
-#         (2, 1),
-#         (20, 2),
-#         # add more tuples as needed
+#           {"wrongMatches": 20, "time": 1},
+#           {"wrongMatches": 20, "time": 1},
 #     ]
 # })
 # print(response.text)
