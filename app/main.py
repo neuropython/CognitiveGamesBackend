@@ -157,7 +157,7 @@ class GameTypes(Enum):
     number_game = "number_game"
 
 class User(BaseModel):
-    id: int
+    id: str
     first_name: str
     last_name: str
     email: EmailStr
@@ -179,7 +179,7 @@ class Games(BaseModel):
         use_enum_values = True
 
 class UserGames(BaseModel):
-    user_id: int
+    user_id: str
     game_id: int
     score: float
     date: datetime
