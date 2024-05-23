@@ -158,20 +158,19 @@ class Games(BaseModel):
         use_enum_values = True
 
 class UserGames(BaseModel):
-    id: str
     user_id: int
     game_id: int
     score: float
     date: datetime
 
 class ColorGameInput(BaseModel):
-    score_list: List[Tuple[str, str, int]]
+    score_list: List[Tuple[str, str, float]]
 
 class CardsGameInput(BaseModel):
-    score_list: List[Tuple[List[int], int]]
+    score_list: List[Tuple[int, float]]
 
 class NumberGameInput(BaseModel):
-    score_list: List[Tuple[List[int], List[int], int]]
+    score_list: List[Tuple[List[int], List[int], float]]
 ################################# SERIALIZERS #################################
 def hide_password_serializer(user):
     """
@@ -465,7 +464,46 @@ async def create_user_game_number(score: NumberGameInput, token: str = Depends(o
         "score": final_score, 
         "date": datetime.now()
     }
-    
+
+@app.post("/add_new_score/memory_game")
+async def create_user_game_number(score: CardsGameInput, token: str = Depends(oauth2_scheme)) -> UserGames:
+    """
+    Create a new user game score.
+
+    This endpoint allows you to create a new user game score for the memory game. 
+    It calculates the score based on the user's answers and the correct answers, 
+    and then stores the score in the database.
+
+    Args:
+    score (CardsGameInput): The user's answers and the correct answers for the game.
+    token (str, optional): The user's authentication token. Defaults to Depends(oauth2_scheme).
+
+    Returns:
+    UserGames: The created user game score.
+    """
+    user = await get_current_user(token)
+    game_id = 1
+    score_to_compute = score.score_list
+    scores = []
+    for one_game in score_to_compute:
+        uncorrect_answers = one_game[0]
+        _score = - uncorrect_answers * 0.8 -one_game[1] * 0.2
+        scores.append(_score)
+    final_score = sum(scores) + 100
+    inserted_document = user_games_collection.insert_one({
+        "user_id": user["id"],
+        "game_id": game_id,
+        "score": final_score,
+        "date": datetime.now()
+    })
+    return {
+        "id": str(inserted_document.inserted_id),  
+        "user_id": user["id"], 
+        "game_id": game_id, 
+        "score": final_score, 
+        "date": datetime.now()
+    }
+ 
 @app.post("/login", response_model=Token)
 async def login_for_access_token(
     form_data: Annotated[OAuth2PasswordRequestForm, Depends()],

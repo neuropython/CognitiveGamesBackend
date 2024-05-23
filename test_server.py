@@ -36,7 +36,7 @@ print(requests.get('http://127.0.0.1:8000', headers=headers).text)
 # response = requests.get("http://127.0.0.1:8000/games",  headers=headers)
 # print(response.text)
 
-# create game - for backend
+# create game - for backend ####### BACKEND
 # response = requests.post('http://127.0.0.1:8000/games', json={
 #         "id": 1,
 #         "game_type": "memory_game"
@@ -57,7 +57,7 @@ print(requests.get('http://127.0.0.1:8000', headers=headers).text)
 # login = requests.post('http://127.0.0.1:8000/refresh_token', params=refresh_token_header)
 # print(login.text)  
 
-# response = requests.get('http://127.0.0.1:8000/all_scores/3')
+# response = requests.get('http://127.0.0.1:8000/all_scores/1')
 # print(response.text)
 
 # response = requests.post('http://127.0.0.1:8000/add_new_score/number_game', headers=headers, json={
@@ -78,3 +78,11 @@ print(requests.get('http://127.0.0.1:8000', headers=headers).text)
 # })
 # print(response.text)
 
+# response = requests.post('http://127.0.0.1:8000/add_new_score/memory_game', headers=headers, json={
+#       "score_list": [
+#         (2, 1),
+#         (20, 2),
+#         # add more tuples as needed
+#     ]
+# })
+# print(response.text)
