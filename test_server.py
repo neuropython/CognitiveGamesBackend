@@ -29,8 +29,8 @@ print(requests.get('http://127.0.0.1:8000', headers=headers).text)
 ### Test game endpoints ###
 
 # get all game scores related to a user
-# response = requests.get("http://127.0.0.1:8000/users/1/games",  headers=headers)
-# print(response.text)
+response = requests.get("http://127.0.0.1:8000/users/games/2",  headers=headers)
+print(response.text)
 
 # get all games
 # response = requests.get("http://127.0.0.1:8000/games",  headers=headers)
