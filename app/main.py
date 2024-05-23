@@ -13,7 +13,6 @@ from jose import JWTError, jwt
 from datetime import datetime, timedelta
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from fastapi.exceptions import HTTPException
-from dependencies import get_password_hash, verify_password
 from scipy.stats import pearsonr
 
 app = FastAPI(debug=True)
@@ -39,6 +38,20 @@ JWT_SECRET = os.getenv("JWT_SECRET")
 EXPIRATION_TIME = os.getenv("EXPIRATION_TIME")
 
 ### Authentication ###
+
+def verify_password(plain_password, hashed_password):
+    """
+    Verify the password
+    
+    Args:
+        plain_password (str): The plain password
+        hashed_password (str): The hashed password
+    
+    Returns:
+        bool: True if the password is verified, False otherwise
+    """
+    return pwd_context.verify(plain_password, hashed_password)
+
 def authenticate_user(username: str, password: str):
     """
     Authenticate the user
