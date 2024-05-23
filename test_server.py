@@ -60,11 +60,21 @@ print(requests.get('http://127.0.0.1:8000', headers=headers).text)
 # response = requests.get('http://127.0.0.1:8000/all_scores/3')
 # print(response.text)
 
-response = requests.post('http://127.0.0.1:8000/add_new_score/color_game', headers=headers, json={
-      "score_list": [
-        ([0, 1], [1, 1], 1),
-        ([1, 0], [0, 1], 2),
-        # add more tuples as needed
-    ]
-})
-print(response.text)
+# response = requests.post('http://127.0.0.1:8000/add_new_score/number_game', headers=headers, json={
+#       "score_list": [
+#         ([0, 1], [1, 1], 1),
+#         ([1, 0], [0, 1], 2),
+#         # add more tuples as needed
+#     ]
+# })
+# print(response.text)
+
+# response = requests.post('http://127.0.0.1:8000/add_new_score/color_game', headers=headers, json={
+#       "score_list": [
+#         ("yellow", "red", 1),
+#         ("yellow", "yellow", 2),
+#         # add more tuples as needed
+#     ]
+# })
+# print(response.text)
+

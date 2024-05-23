@@ -165,7 +165,7 @@ class UserGames(BaseModel):
     date: datetime
 
 class ColorGameInput(BaseModel):
-    score_list: List[Tuple[List[int], List[int], int]]
+    score_list: List[Tuple[str, str, int]]
 
 class CardsGameInput(BaseModel):
     score_list: List[Tuple[List[int], int]]
@@ -397,62 +397,20 @@ async def create_user_game_color(score: ColorGameInput, token: str = Depends(oau
     UserGames: The created user game score.
     """
     user = await get_current_user(token)
-    game_id = 3
-    score_to_compute = score.score_list
-    scores = []
-    for one_game in score_to_compute:
-        correct_answers = one_game[0]
-        user_answers = one_game[1]
-        _correct = sum(c == u for c, u in zip(correct_answers, user_answers))
-        correlation = _correct / len(correct_answers)
-        _score = correlation * 0.8 +  (-one_game[2]) *0.2
-        scores.append(_score)
-        final_score = sum(scores) + 100
-        print(final_score)
-        inserted_document = user_games_collection.insert_one({
-        "user_id": user["id"],
-        "game_id": game_id,
-        "score": final_score,
-        "date": datetime.now()
-    })
-    return {
-        "id": str(inserted_document.inserted_id),  
-        "user_id": user["id"], 
-        "game_id": game_id, 
-        "score": final_score, 
-        "date": datetime.now()
-    }
-
-@app.post("/add_new_score/")
-async def create_user_game_color(score: ColorGameInput, token: str = Depends(oauth2_scheme)) -> UserGames:
-    """
-    Create a new user game score.
-
-    This endpoint allows you to create a new user game score for the color game. 
-    It calculates the score based on the user's answers and the correct answers, 
-    and then stores the score in the database.
-
-    Args:
-    score (ColorGameInput): The user's answers and the correct answers for the game.
-    token (str, optional): The user's authentication token. Defaults to Depends(oauth2_scheme).
-
-    Returns:
-    UserGames: The created user game score.
-    """
-    user = await get_current_user(token)
     game_id = 2 
     score_to_compute = score.score_list
     scores = []
     for one_game in score_to_compute:
         correct_answers = one_game[0]
         user_answers = one_game[1]
-        _correct = sum(c == u for c, u in zip(correct_answers, user_answers))
-        correlation = _correct / len(correct_answers)
-        _score = correlation * 0.8 +  (-one_game[2]) *0.2
+        if user_answers == correct_answers:
+            current_score = 1
+        else:
+            current_score = 0
+        _score = current_score * 0.8 +  (-one_game[2]) *0.2
         scores.append(_score)
-        final_score = sum(scores) + 100
-        print(final_score)
-        inserted_document = user_games_collection.insert_one({
+    final_score = sum(scores) + 100
+    inserted_document = user_games_collection.insert_one({
         "user_id": user["id"],
         "game_id": game_id,
         "score": final_score,
@@ -483,7 +441,7 @@ async def create_user_game_number(score: NumberGameInput, token: str = Depends(o
     UserGames: The created user game score.
     """
     user = await get_current_user(token)
-    game_id = 2 
+    game_id = 3
     score_to_compute = score.score_list
     scores = []
     for one_game in score_to_compute:
@@ -493,9 +451,8 @@ async def create_user_game_number(score: NumberGameInput, token: str = Depends(o
         correlation = _correct / len(correct_answers)
         _score = correlation * 0.8 +  (-one_game[2]) *0.2
         scores.append(_score)
-        final_score = sum(scores) + 100
-        print(final_score)
-        inserted_document = user_games_collection.insert_one({
+    final_score = sum(scores) + 100
+    inserted_document = user_games_collection.insert_one({
         "user_id": user["id"],
         "game_id": game_id,
         "score": final_score,
