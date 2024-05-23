@@ -602,29 +602,6 @@ async def read_users_me(current_user: dict = Depends(get_current_user)):
     user_without_id = {k: v for k, v in current_user.items() if k != '_id' and k != 'password'}
     return {"user": user_without_id, "message": "You are authorized"}
 
-@app.get("/all_scores/{game_id}")
-async def read_all_scores(game_id: int) -> List[UserGames]:
-
-    """
-    # Read all scores
-    
-    This endpoint reads all scores.
-    
-    ## Returns
-    
-    - `List[UserGames]`: The list of scores
-    
-    ## Comments
-    
-    unauthorized access
-    
-    """
-    game = games_collection.find_one({"id": game_id})
-    if game is None:
-        raise HTTPException(status_code=404, detail="Game not found")
-    scores = user_games_collection.find({"game_id": game_id})
-    return list(scores)
-
 @app.get("/do_i_score_below_average/{game_id}")
 async def read_all_scores(game_id: int, token: str = Depends(oauth2_scheme)):
     """
