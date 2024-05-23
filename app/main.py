@@ -541,7 +541,7 @@ async def create_user_game_number(score: CardsGameInput, token: str = Depends(oa
 @app.post("/login", response_model=Token)
 async def login_for_access_token(
     form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
-) -> Token:
+):
     """
     # Login
     
@@ -571,7 +571,11 @@ async def login_for_access_token(
     refresh_token = create_refresh_token(
         data={"sub": user["username"]}
     )
-    return {"access_token": access_token, "refresh_token": refresh_token} 
+    return {
+        "access_token": access_token, 
+        "refresh_token": refresh_token,
+        "token_type": "Bearer",
+        } 
 
 @app.post("/refresh_token", response_model=Token)
 async def refresh_token(refresh_token: str):
@@ -612,7 +616,7 @@ async def refresh_token(refresh_token: str):
     access_token = create_access_token(
         data={"sub": user["username"]}, expires_delta=access_token_expires
     )
-    return {"access_token": access_token, "token_type": "bearer"}
+    return {"access_token": access_token, "token_type": "Bearer"}
 
 @app.get("/me")
 async def read_users_me(current_user: dict = Depends(get_current_user)):

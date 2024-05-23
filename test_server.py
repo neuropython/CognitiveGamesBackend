@@ -48,14 +48,14 @@ print(response.text)
 ### Test user games endpoints ###
 
 
-# login = requests.post('http://127.0.0.1:8000/login', data={"username": "johndoe", "password": "secret"})
-# print(login.text)    
+login = requests.post('http://127.0.0.1:8000/login', data={"username": "johndoe", "password": "secret"})
+print(login.text)    
 
 # response_me = requests.get('http://127.0.0.1:8000/me', headers=headers)
 # print(response_me.text)
 
-# login = requests.post('http://127.0.0.1:8000/refresh_token', params=refresh_token_header)
-# print(login.text)  
+login = requests.post('http://127.0.0.1:8000/refresh_token', params=refresh_token_header)
+print(login.text)  
 
 # response = requests.get('http://127.0.0.1:8000/all_scores/1')
 # print(response.text)
