@@ -2,7 +2,7 @@ import requests
 from datetime import datetime
 
 # Test the server
-headers = {"Authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJqb2huZG9lIiwiZXhwIjoxNzE2MTUxNzE5fQ.AMVUVQDiHv6NrAkdl4LU29Lioo0GtPk79pl32ZzZYCM"}
+headers = {"Authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJqb2huZG9lIiwiZXhwIjoxNzE2NDc3MTcwfQ.mZnlZx_Rn3Vv-qG_q5NELOGEg8nBAEc1eM9AhKtkPQs"}
 refresh_token_header = {"refresh_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJqb2huZG9lIiwiZXhwIjoxNzE5MDY2MTM2fQ.5d_eMPiimrpWmGyMLC_CSy-qx-NO5NBrTFHpOoAGINc"}
 ### Test the server
 print(requests.get('http://127.0.0.1:8000', headers=headers).text)
@@ -47,15 +47,6 @@ print(requests.get('http://127.0.0.1:8000', headers=headers).text)
 
 ### Test user games endpoints ###
 
-# response = requests.post('http://127.0.0.1:8000/add_new_score', headers=headers, json={
-#     "id": 1,
-#     "user_id": 1,
-#     "game_id": 3,
-#     "score": 100,
-#     "date": datetime.now().isoformat()
-# })
-
-# print(response.text)
 
 # login = requests.post('http://127.0.0.1:8000/login', data={"username": "johndoe", "password": "secret"})
 # print(login.text)    
@@ -63,8 +54,17 @@ print(requests.get('http://127.0.0.1:8000', headers=headers).text)
 # response_me = requests.get('http://127.0.0.1:8000/me', headers=headers)
 # print(response_me.text)
 
-login = requests.post('http://127.0.0.1:8000/refresh_token', params=refresh_token_header)
-print(login.text)  
+# login = requests.post('http://127.0.0.1:8000/refresh_token', params=refresh_token_header)
+# print(login.text)  
 
 # response = requests.get('http://127.0.0.1:8000/all_scores/3')
 # print(response.text)
+
+response = requests.post('http://127.0.0.1:8000/add_new_score/color_game', headers=headers, json={
+      "score_list": [
+        ([0, 1], [1, 1], 1),
+        ([1, 0], [0, 1], 2),
+        # add more tuples as needed
+    ]
+})
+print(response.text)

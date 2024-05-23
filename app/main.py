@@ -1,7 +1,7 @@
 from typing import Union, Annotated
 from fastapi import FastAPI, Depends
 from pydantic import BaseModel, EmailStr, SecretStr
-from typing import List, Union
+from typing import List, Union, Tuple
 from enum import Enum
 from dotenv import load_dotenv
 import os
@@ -14,6 +14,7 @@ from datetime import datetime, timedelta
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from fastapi.exceptions import HTTPException
 from dependencies import get_password_hash, verify_password
+from scipy.stats import pearsonr
 
 app = FastAPI(debug=True)
 load_dotenv()
@@ -157,12 +158,20 @@ class Games(BaseModel):
         use_enum_values = True
 
 class UserGames(BaseModel):
-    id: int
+    id: str
     user_id: int
     game_id: int
-    score: int
+    score: float
     date: datetime
 
+class ColorGameInput(BaseModel):
+    score_list: List[Tuple[List[int], List[int], int]]
+
+class CardsGameInput(BaseModel):
+    score_list: List[Tuple[List[int], int]]
+
+class NumberGameInput(BaseModel):
+    score_list: List[Tuple[List[int], List[int], int]]
 ################################# SERIALIZERS #################################
 def hide_password_serializer(user):
     """
@@ -371,48 +380,135 @@ async def create_game(game: Games) -> Games:
     games_collection.insert_one(game.dict())
     return game
 
-@app.post("/add_new_score")
-async def create_user_game(score: UserGames, token: str = Depends(oauth2_scheme)) -> UserGames:
+@app.post("/add_new_score/color_game")
+async def create_user_game_color(score: ColorGameInput, token: str = Depends(oauth2_scheme)) -> UserGames:
     """
-    # Create a user game
-    
-    This endpoint creates a new user game.
-    
-    ## Parameters
-    
-    - `score` (UserGames): The user game
-    - `token` (str): The token (header)
-    
-    ## Returns
-    
-    - `UserGames`: The user game
+    Create a new user game score.
 
-    ## Raises
+    This endpoint allows you to create a new user game score for the color game. 
+    It calculates the score based on the user's answers and the correct answers, 
+    and then stores the score in the database.
 
-    - `HTTPException`: If the user is not found
-    - `HTTPException`: If the game is not found
-    - `HTTPException`: If the user is unauthorized
-    
-    ## Authorization
+    Args:
+    score (ColorGameInput): The user's answers and the correct answers for the game.
+    token (str, optional): The user's authentication token. Defaults to Depends(oauth2_scheme).
 
-    - Bearer Token (header)
-
-    ## Comments
-
-    datetime is automatically added to the score
+    Returns:
+    UserGames: The created user game score.
     """
     user = await get_current_user(token)
-    if score.user_id != user["id"]:
-        raise HTTPException(status_code=401, detail="Unauthorized")
-    game_id = score.game_id
-    games = games_collection.find_one({"id":game_id})
-    if user is None :
-        raise HTTPException(status_code=404, detail="User not found")
-    if games is None:
-        raise HTTPException(status_code=404, detail="Game not found")
-    user_games_collection.insert_one(score.dict())
-    return score
+    game_id = 3
+    score_to_compute = score.score_list
+    scores = []
+    for one_game in score_to_compute:
+        correct_answers = one_game[0]
+        user_answers = one_game[1]
+        _correct = sum(c == u for c, u in zip(correct_answers, user_answers))
+        correlation = _correct / len(correct_answers)
+        _score = correlation * 0.8 +  (-one_game[2]) *0.2
+        scores.append(_score)
+        final_score = sum(scores) + 100
+        print(final_score)
+        inserted_document = user_games_collection.insert_one({
+        "user_id": user["id"],
+        "game_id": game_id,
+        "score": final_score,
+        "date": datetime.now()
+    })
+    return {
+        "id": str(inserted_document.inserted_id),  
+        "user_id": user["id"], 
+        "game_id": game_id, 
+        "score": final_score, 
+        "date": datetime.now()
+    }
 
+@app.post("/add_new_score/")
+async def create_user_game_color(score: ColorGameInput, token: str = Depends(oauth2_scheme)) -> UserGames:
+    """
+    Create a new user game score.
+
+    This endpoint allows you to create a new user game score for the color game. 
+    It calculates the score based on the user's answers and the correct answers, 
+    and then stores the score in the database.
+
+    Args:
+    score (ColorGameInput): The user's answers and the correct answers for the game.
+    token (str, optional): The user's authentication token. Defaults to Depends(oauth2_scheme).
+
+    Returns:
+    UserGames: The created user game score.
+    """
+    user = await get_current_user(token)
+    game_id = 2 
+    score_to_compute = score.score_list
+    scores = []
+    for one_game in score_to_compute:
+        correct_answers = one_game[0]
+        user_answers = one_game[1]
+        _correct = sum(c == u for c, u in zip(correct_answers, user_answers))
+        correlation = _correct / len(correct_answers)
+        _score = correlation * 0.8 +  (-one_game[2]) *0.2
+        scores.append(_score)
+        final_score = sum(scores) + 100
+        print(final_score)
+        inserted_document = user_games_collection.insert_one({
+        "user_id": user["id"],
+        "game_id": game_id,
+        "score": final_score,
+        "date": datetime.now()
+    })
+    return {
+        "id": str(inserted_document.inserted_id),  
+        "user_id": user["id"], 
+        "game_id": game_id, 
+        "score": final_score, 
+        "date": datetime.now()
+    }
+    
+@app.post("/add_new_score/number_game")
+async def create_user_game_number(score: NumberGameInput, token: str = Depends(oauth2_scheme)) -> UserGames:
+    """
+    Create a new user game score.
+
+    This endpoint allows you to create a new user game score for the number game. 
+    It calculates the score based on the user's answers and the correct answers, 
+    and then stores the score in the database.
+
+    Args:
+    score (NumberGameInput): The user's answers and the correct answers for the game.
+    token (str, optional): The user's authentication token. Defaults to Depends(oauth2_scheme).
+
+    Returns:
+    UserGames: The created user game score.
+    """
+    user = await get_current_user(token)
+    game_id = 2 
+    score_to_compute = score.score_list
+    scores = []
+    for one_game in score_to_compute:
+        correct_answers = one_game[0]
+        user_answers = one_game[1]
+        _correct = sum(c == u for c, u in zip(correct_answers, user_answers))
+        correlation = _correct / len(correct_answers)
+        _score = correlation * 0.8 +  (-one_game[2]) *0.2
+        scores.append(_score)
+        final_score = sum(scores) + 100
+        print(final_score)
+        inserted_document = user_games_collection.insert_one({
+        "user_id": user["id"],
+        "game_id": game_id,
+        "score": final_score,
+        "date": datetime.now()
+    })
+    return {
+        "id": str(inserted_document.inserted_id),  
+        "user_id": user["id"], 
+        "game_id": game_id, 
+        "score": final_score, 
+        "date": datetime.now()
+    }
+    
 @app.post("/login", response_model=Token)
 async def login_for_access_token(
     form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
