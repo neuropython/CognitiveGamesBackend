@@ -284,6 +284,11 @@ async def read_user(user_id: int, token: str = Depends(oauth2_scheme)) -> Union[
     ## Authorization
 
     - Bearer Token (header)
+
+    ## Comments
+
+    - This endpoint is for admin purposes, it can be used by non admin but cracking 
+    id is not possible since it is a UUID.
     """
     user = users_collection.find_one({"id": user_id})
     current_user = await get_current_user(token)
@@ -292,49 +297,6 @@ async def read_user(user_id: int, token: str = Depends(oauth2_scheme)) -> Union[
     if user is None:
         raise HTTPException(status_code=404, detail="User not found")
     return user
-
-@app.get("/users")
-async def read_users() -> List[User]:
-    """
-    # Read users
-    
-    This endpoint reads all users.
-    
-    ## Returns
-    
-    - `List[User]`: The list of users
-    
-    ## Comments
-    
-    unauthorized access
-    
-    """
-    users = users_collection.find()
-    return list(users)
-
-@app.get("/users/games")
-async def read_user_games(token: str = Depends(oauth2_scheme)) -> List[UserGames]:
-    """
-    # Read user games
-    
-    This endpoint reads all games related to a user.
-    
-    ## Parameters
-    
-    - `token` (str): The token (header)
-    
-    ## Returns
-    
-    - `List[UserGames]`: The list of games
-    
-    ## Raises
-    
-    - `HTTPException`: If the user is unauthorized
-    """
-    curret_user = await get_current_user(token)
-    user_id = curret_user["id"]
-    user_games = user_games_collection.find({"user_id": user_id})
-    return list(user_games)
 
 @app.get("/users/games/{game_id}")
 async def read_user_games(game_id:int, token: str = Depends(oauth2_scheme)) -> List[UserGames]:
@@ -466,7 +428,7 @@ async def create_user_game_color(score: ColorGameInput, token: str = Depends(oau
             current_score = 1
         else:
             current_score = 0
-        _score = current_score * 0.8 +  (-one_game.time) *0.2
+        _score = current_score * 0.8 + (-one_game.time) *0.2 / 1000
         scores.append(_score)
     final_score = sum(scores) + 100
     inserted_document = user_games_collection.insert_one({
@@ -508,7 +470,7 @@ async def create_user_game_number(score: NumberGameInput, token: str = Depends(o
         user_answers = one_game.userAnswer
         _correct = sum(c == u for c, u in zip(correct_answers, user_answers))
         correlation = _correct / len(correct_answers)
-        _score = correlation * 0.8 +  (-one_game.time) *0.2
+        _score = correlation * 0.8 +  (-one_game.time) *0.2 / 1000
         scores.append(_score)
     final_score = sum(scores) + 100
     inserted_document = user_games_collection.insert_one({
@@ -547,7 +509,7 @@ async def create_user_game_number(score: CardsGameInput, token: str = Depends(oa
     scores = []
     for one_game in score_to_compute:
         uncorrect_answers = one_game.wrongMatches
-        _score = - uncorrect_answers * 0.8 -one_game.time * 0.2
+        _score = - uncorrect_answers * 0.8 - one_game.time * 0.2 / 1000
         scores.append(_score)
     final_score = sum(scores) + 100
     inserted_document = user_games_collection.insert_one({
@@ -669,6 +631,7 @@ async def read_users_me(current_user: dict = Depends(get_current_user)):
 
 @app.get("/all_scores/{game_id}")
 async def read_all_scores(game_id: int) -> List[UserGames]:
+
     """
     # Read all scores
     
@@ -688,3 +651,43 @@ async def read_all_scores(game_id: int) -> List[UserGames]:
         raise HTTPException(status_code=404, detail="Game not found")
     scores = user_games_collection.find({"game_id": game_id})
     return list(scores)
+
+@app.get("/do_i_score_below_average/{game_id}", response_model=bool)
+async def read_all_scores(game_id: int, token: str = Depends(oauth2_scheme)) -> bool:
+    """
+    # Check if user score is below average
+    
+    This endpoint checks if the current user's score is below average.
+
+    ## Parameters
+
+    - `game_id` (int): The game ID
+    - `token` (str): The token (header)
+
+    ## Returns
+
+    - `bool`: True if the score is below average, False otherwise
+
+    ## Raises
+
+    - `HTTPException`: If the game is not found
+
+    ## Authorization
+
+    - Bearer Token (header)
+
+    ## Comments
+
+    This endpoint checks if the user's score is below average.
+    """
+    game = games_collection.find_one({"id": game_id})
+    if game is None:
+        raise HTTPException(status_code=404, detail="Game not found")
+    user = await get_current_user(token)
+    user_scores = user_games_collection.find({"game_id": game_id, "user_id": user["id"]})
+    scores = [score["score"] for score in user_scores]
+    all_game_scores = user_games_collection.find({"game_id": game_id})
+    avg_score = sum([score["score"] for score in all_game_scores]) / all_game_scores.count()
+    if scores[-1] < avg_score:
+        return True
+    return False

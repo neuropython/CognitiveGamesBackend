@@ -2,7 +2,7 @@ import requests
 from datetime import datetime
 
 # Test the server
-headers = {"Authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJpZ2kyIiwiZXhwIjoxNzE2NTAwMjgxfQ.QkJSixO360kvtlocZYwXYikNTRfgEaLjVlM3Ykxn4Ec"}
+headers = {"Authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJqb2huZG9lcGUiLCJleHAiOjE3MTY1MDEyOTR9.sP7kHm-wqGKdSwR1bvY5MqOh-RHhOu7l-aQTxjOSXaw"}
 refresh_token = {"refresh_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJqb2huZG9lIiwiZXhwIjoxNzE5MDY2MTM2fQ.5d_eMPiimrpWmGyMLC_CSy-qx-NO5NBrTFHpOoAGINc"}
 ### Test the server
 print(requests.get('http://127.0.0.1:8000', headers=headers).text)
@@ -12,23 +12,20 @@ print(requests.get('http://127.0.0.1:8000', headers=headers).text)
 # get single user
 # print(requests.get('http://127.0.0.1:8000/users/1', headers=headers).text)
 
-# get all users
-# print(requests.get('http://127.0.0.1:8000/users'))
-
 # create user
-response = requests.post("http://127.0.0.1:8000/users", json={
-    "first_name": "Johnathan",
-    "last_name": "Doepe",
-    "email": "johndoepe@example.com",
-    "password": "secret1",
-    "username": "johndoepe"
-})
-print(response.text)
+# response = requests.post("http://127.0.0.1:8000/users", json={
+#     "first_name": "Johnathan",
+#     "last_name": "Doepe",
+#     "email": "johndoepe@example.com",
+#     "password": "secret1",
+#     "username": "johndoepe"
+# })
+# print(response.text)
 
 ### Test game endpoints ###
 
 # get all game scores related to a user
-# response = requests.get("http://127.0.0.1:8000/users/games/1",  headers=headers)
+# response = requests.get("http://127.0.0.1:8000/users/games/3",  headers=headers)
 # print(response.text)
 
 # get all games
@@ -40,7 +37,7 @@ print(response.text)
 ### Test user games endpoints ###
 
 
-# login = requests.post('http://127.0.0.1:8000/login', data={"username": "igi2", "password": "aA1111!"})
+# login = requests.post('http://127.0.0.1:8000/login', data={"username": "johndoepe", "password": "secret1"})
 # print(login.text)    
 
 # response_me = requests.get('http://127.0.0.1:8000/me', headers=headers)
@@ -52,12 +49,12 @@ print(response.text)
 # response = requests.get('http://127.0.0.1:8000/all_scores/1')
 # print(response.text)
 
-response = requests.post('http://127.0.0.1:8000/add_new_score/number_game', headers=headers, json={
-      "score_list": [
-        {"correctAnswer": [1], "userAnswer": [1], "time": 1},
-    ]
-})
-print(response.text)
+# response = requests.post('http://127.0.0.1:8000/add_new_score/number_game', headers=headers, json={
+#       "score_list": [
+#         {"correctAnswer": [1], "userAnswer": [1], "time": 1},
+#     ]
+# })
+# print(response.text)
 
 # response = requests.post('http://127.0.0.1:8000/add_new_score/color_game', headers=headers, json={
 #       "score_list": [
