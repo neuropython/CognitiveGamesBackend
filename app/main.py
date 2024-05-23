@@ -1,7 +1,7 @@
 from typing import Union, Annotated
 from fastapi import FastAPI, Depends
 from pydantic import BaseModel, EmailStr, SecretStr
-from typing import List, Union, Tuple
+from typing import List, Union, Optional
 from enum import Enum
 from dotenv import load_dotenv
 import os
@@ -14,6 +14,7 @@ from datetime import datetime, timedelta
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from fastapi.exceptions import HTTPException
 import uuid
+
 
 app = FastAPI(debug=True)
 load_dotenv()
@@ -156,6 +157,14 @@ class GameTypes(Enum):
     number_game = "number_game"
 
 class User(BaseModel):
+    id: int
+    first_name: str
+    last_name: str
+    email: EmailStr
+    username: str
+    password: SecretStr
+
+class UserInput(BaseModel):
     first_name: str
     last_name: str
     email: EmailStr
@@ -197,6 +206,7 @@ class CardsGameInput(BaseModel):
 
 class NumberGameInput(BaseModel):
     score_list: List[GameScoreNumber]
+
 
 ################################# SERIALIZERS #################################
 def hide_password_serializer(user):
@@ -374,7 +384,7 @@ async def read_games() -> List[Games]:
     return list(games)
 
 @app.post("/users")
-async def create_user(user: User) -> User:
+async def create_user(user: UserInput) -> UserInput:
     """
     # Create a user
     
@@ -394,7 +404,9 @@ async def create_user(user: User) -> User:
         raise HTTPException(status_code=400, detail="User already exists")
     hashed_password = pwd_context.hash(user.password.get_secret_value())
     user.password = hashed_password
-    users_collection.insert_one(user.model_dump(), {"id": user_id})
+    user_dict = user.model_dump()
+    user_dict["id"] = user_id
+    users_collection.insert_one(user_dict)
     return hide_password_serializer(user)
 
 def check_user_exists(id: str) -> None:
@@ -430,18 +442,18 @@ async def create_game(game: Games) -> Games:
 @app.post("/add_new_score/color_game")
 async def create_user_game_color(score: ColorGameInput, token: str = Depends(oauth2_scheme)) -> UserGames:
     """
-    Create a new user game score.
+    # Create a new user game score.
 
     This endpoint allows you to create a new user game score for the color game. 
     It calculates the score based on the user's answers and the correct answers, 
     and then stores the score in the database.
 
-    Args:
-    score (ColorGameInput): The user's answers and the correct answers for the game.
-    token (str, optional): The user's authentication token. Defaults to Depends(oauth2_scheme).
+    ## Parameters:
+    - `score` (ColorGameInput): The user's answers and the correct answers for the game.
+    - `token` (str): The user's authentication token
 
-    Returns:
-    UserGames: The created user game score.
+    ## Returns:
+    - `UserGames`: The created user game score.
     """
     user = await get_current_user(token)
     game_id = 2 
@@ -474,18 +486,18 @@ async def create_user_game_color(score: ColorGameInput, token: str = Depends(oau
 @app.post("/add_new_score/number_game")
 async def create_user_game_number(score: NumberGameInput, token: str = Depends(oauth2_scheme)) -> UserGames:
     """
-    Create a new user game score.
+    # Create a new user game score.
 
     This endpoint allows you to create a new user game score for the number game. 
     It calculates the score based on the user's answers and the correct answers, 
     and then stores the score in the database.
 
-    Args:
-    score (NumberGameInput): The user's answers and the correct answers for the game.
-    token (str, optional): The user's authentication token. Defaults to Depends(oauth2_scheme).
+    ## Args:
+    - `score` (NumberGameInput): The user's answers and the correct answers for the game.
+    - `token` (str, optional): The user's authentication token. Defaults to Depends(oauth2_scheme).
 
-    Returns:
-    UserGames: The created user game score.
+    ## Returns:
+    - `UserGames`: The created user game score.
     """
     user = await get_current_user(token)
     game_id = 3
@@ -516,13 +528,13 @@ async def create_user_game_number(score: NumberGameInput, token: str = Depends(o
 @app.post("/add_new_score/memory_game")
 async def create_user_game_number(score: CardsGameInput, token: str = Depends(oauth2_scheme)) -> UserGames:
     """
-    Create a new user game score.
+    # Create a new user game score.
 
     This endpoint allows you to create a new user game score for the memory game. 
     It calculates the score based on the user's answers, 
     and then stores the score in the database.
 
-    Args:
+    # Args:
     score (CardsGameInput): The user's answers for the game.
     token (str, optional): The user's authentication token. Defaults to Depends(oauth2_scheme).
 
@@ -676,5 +688,3 @@ async def read_all_scores(game_id: int) -> List[UserGames]:
         raise HTTPException(status_code=404, detail="Game not found")
     scores = user_games_collection.find({"game_id": game_id})
     return list(scores)
-
-    
