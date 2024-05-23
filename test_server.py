@@ -2,7 +2,7 @@ import requests
 from datetime import datetime
 
 # Test the server
-headers = {"Authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJqb2huZG9lcGUiLCJleHAiOjE3MTY1MDEyOTR9.sP7kHm-wqGKdSwR1bvY5MqOh-RHhOu7l-aQTxjOSXaw"}
+headers = {"Authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJqb2huZG9lcGUiLCJleHAiOjE3MTY1MDQ0NjB9.17ul-SRwJq6sjkczObfhtyHpcFG072ZYWscK9CmWX80"}
 refresh_token = {"refresh_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJqb2huZG9lIiwiZXhwIjoxNzE5MDY2MTM2fQ.5d_eMPiimrpWmGyMLC_CSy-qx-NO5NBrTFHpOoAGINc"}
 ### Test the server
 print(requests.get('http://127.0.0.1:8000', headers=headers).text)
@@ -25,20 +25,17 @@ print(requests.get('http://127.0.0.1:8000', headers=headers).text)
 ### Test game endpoints ###
 
 # get all game scores related to a user
-# response = requests.get("http://127.0.0.1:8000/users/games/3",  headers=headers)
+# response = requests.get("http://127.0.0.1:8000/users/games/1",  headers=headers)
 # print(response.text)
 
 # get all games
 # response = requests.get("http://127.0.0.1:8000/games",  headers=headers)
 # print(response.text)
 
-# print(requests.get('http://127.0.0.1:8000/games').text)
-
 ### Test user games endpoints ###
 
-
-# login = requests.post('http://127.0.0.1:8000/login', data={"username": "johndoepe", "password": "secret1"})
-# print(login.text)    
+login = requests.post('http://127.0.0.1:8000/login', data={"username": "johndoepe", "password": "secret1"})
+print(login.text)    
 
 # response_me = requests.get('http://127.0.0.1:8000/me', headers=headers)
 # print(response_me.text)
@@ -71,5 +68,5 @@ print(requests.get('http://127.0.0.1:8000', headers=headers).text)
 # })
 # print(response.text)
 
-response = requests.get('http://127.0.0.1:8000/do_i_score_below_average/3', headers=headers)
-print(response.text)
+# response = requests.get('http://127.0.0.1:8000/do_i_score_below_average/3', headers=headers)
+# print(response.text)

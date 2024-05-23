@@ -85,7 +85,7 @@ class Token(BaseModel):
 
 class TokenData(BaseModel):
     username: str | None = None
-    user_id: int | None = None
+    user_id: str | None = None
 
 def create_access_token(data: dict, expires_delta: timedelta | None = None) -> str:
     """
@@ -118,7 +118,6 @@ def create_refresh_token(data: dict) -> str:
         str: The encoded JWT token
     """
     to_encode = data.copy()
-    # Refresh tokens usually have long validity
     expire = datetime.now() + timedelta(days=30)
     to_encode.update({"exp": expire})
     encoded_jwt = jwt.encode(to_encode, JWT_SECRET, algorithm=ALGORITHM)
@@ -260,50 +259,13 @@ def read_root():
     """
     return {"CogniBackendApp"}
 
-@app.get("/users/{user_id}", response_model=User)
-async def read_user(user_id: int, token: str = Depends(oauth2_scheme)) -> Union[User, HTTPException]:
-    """
-    # Read a user
-
-    This endpoint reads a user based on the provided user ID.
-
-    ## Parameters
-
-    - `user_id` (int): The user ID (inside the URL)
-    - `token` (str): The token (header)
-
-    ## Returns
-
-    - `Union[User, HTTPException]`: The user or an HTTPException
-
-    ## Raises
-
-    - `HTTPException`: If the user is not found
-    - `HTTPException`: If the user is unauthorized
-
-    ## Authorization
-
-    - Bearer Token (header)
-
-    ## Comments
-
-    - This endpoint is for admin purposes, it can be used by non admin but cracking 
-    id is not possible since it is a UUID.
-    """
-    user = users_collection.find_one({"id": user_id})
-    current_user = await get_current_user(token)
-    if current_user["id"] != user_id:
-        raise HTTPException(status_code=401, detail="Unauthorized")
-    if user is None:
-        raise HTTPException(status_code=404, detail="User not found")
-    return user
-
 @app.get("/users/games/{game_id}")
 async def read_user_games(game_id:int, token: str = Depends(oauth2_scheme)) -> List[UserGames]:
     """
     # Read user games
     
-    This endpoint reads all games related to a user.
+    This endpoint reads all games related to a user selected by id.
+    It can be used to generate plot
     
     ## Parameters
     
@@ -410,6 +372,9 @@ async def create_user_game_color(score: ColorGameInput, token: str = Depends(oau
     It calculates the score based on the user's answers and the correct answers, 
     and then stores the score in the database.
 
+    ## equation to evalue the score
+    score = binary 0 or 1 * 0.8 - (time * 0.2)/ 1000
+
     ## Parameters:
     - `score` (ColorGameInput): The user's answers and the correct answers for the game.
     - `token` (str): The user's authentication token
@@ -454,6 +419,9 @@ async def create_user_game_number(score: NumberGameInput, token: str = Depends(o
     It calculates the score based on the user's answers and the correct answers, 
     and then stores the score in the database.
 
+    ## equation to evalue the score
+    score = corelation between correct and user matches * 0.8 - (time * 0.2)/ 1000
+
     ## Args:
     - `score` (NumberGameInput): The user's answers and the correct answers for the game.
     - `token` (str, optional): The user's authentication token. Defaults to Depends(oauth2_scheme).
@@ -496,11 +464,14 @@ async def create_user_game_number(score: CardsGameInput, token: str = Depends(oa
     It calculates the score based on the user's answers, 
     and then stores the score in the database.
 
-    # Args:
+    ## equation to evalue the score
+    score = - wrongMatches * 0.8 - time * 0.2 / 1000
+
+    ## Args:
     score (CardsGameInput): The user's answers for the game.
     token (str, optional): The user's authentication token. Defaults to Depends(oauth2_scheme).
 
-    Returns:
+    ## Returns:
     UserGames: The created user game score.
     """
     user = await get_current_user(token)
@@ -526,7 +497,7 @@ async def create_user_game_number(score: CardsGameInput, token: str = Depends(oa
         "date": datetime.now()
     }
  
-@app.post("/login", response_model=Token)
+@app.post("/login")
 async def login_for_access_token(
     form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
 ):
@@ -542,7 +513,9 @@ async def login_for_access_token(
     
     ## Returns
     
-    - `Token`: The token
+    - `refresh_token`: The refresh token
+    - `access_token`: The access token
+    - `token_type`: The token type
     
     ## Raises
 
@@ -563,7 +536,7 @@ async def login_for_access_token(
         "access_token": access_token, 
         "refresh_token": refresh_token,
         "token_type": "Bearer",
-        } 
+    }
 
 @app.post("/refresh_token", response_model=Token)
 async def refresh_token(refresh_token: str):
