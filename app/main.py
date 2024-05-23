@@ -636,10 +636,10 @@ async def read_all_scores(game_id: int, token: str = Depends(oauth2_scheme)):
     user = await get_current_user(token)
     user_scores = user_games_collection.find({"game_id": game_id, "user_id": user["id"]})
     if user_scores is None:
-        return HTTPException(status_code=404, detail="Have you played this game?")
+        return False
     scores = [score["score"] for score in user_scores]
     if scores == []:
-        return HTTPException(status_code=404, detail="Have you played this game?")
+       return False
     avg_user_score = sum(scores) / len(scores)
     all_game_scores = user_games_collection.find({"game_id": game_id})
     n = len(list(all_game_scores))

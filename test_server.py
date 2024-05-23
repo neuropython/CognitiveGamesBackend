@@ -29,8 +29,8 @@ print(requests.get('http://127.0.0.1:8000', headers=headers).text)
 # print(response.text)
 
 # get all games
-response = requests.get("http://127.0.0.1:8000/games",  headers=headers)
-print(response.text)
+# response = requests.get("http://127.0.0.1:8000/games",  headers=headers)
+# print(response.text)
 
 ### Test user games endpoints ###
 
@@ -40,8 +40,8 @@ print(response.text)
 # response_me = requests.get('http://127.0.0.1:8000/me', headers=headers)
 # print(response_me.text)
 
-# login = requests.post('http://127.0.0.1:8000/refresh_token', params=refresh_token)
-# print(login.text)  
+login = requests.post('http://127.0.0.1:8000/refresh_token', params=refresh_token)
+print(login.text)
 
 # response = requests.post('http://127.0.0.1:8000/add_new_score/number_game', headers=headers, json={
 #       "score_list": [
