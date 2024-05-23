@@ -13,7 +13,7 @@ from jose import JWTError, jwt
 from datetime import datetime, timedelta
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from fastapi.exceptions import HTTPException
-from scipy.stats import pearsonr
+import uuid
 
 app = FastAPI(debug=True)
 load_dotenv()
@@ -156,7 +156,6 @@ class GameTypes(Enum):
     number_game = "number_game"
 
 class User(BaseModel):
-    id: int
     first_name: str
     last_name: str
     email: EmailStr
@@ -374,13 +373,13 @@ async def create_user(user: User) -> User:
     
     - `User`: The user
     """
-    id = user.id
-    user_check = check_user_exists(id)
+    user_id = str(uuid.uuid4())
+    user_check = check_user_exists(user_id)
     if user_check == 1:
         raise HTTPException(status_code=400, detail="User already exists")
     hashed_password = pwd_context.hash(user.password.get_secret_value())
     user.password = hashed_password
-    users_collection.insert_one(user.model_dump())
+    users_collection.insert_one(user.model_dump(), {"id": user_id})
     return hide_password_serializer(user)
 
 def check_user_exists(id: str) -> None:
