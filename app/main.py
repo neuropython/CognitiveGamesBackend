@@ -652,8 +652,8 @@ async def read_all_scores(game_id: int) -> List[UserGames]:
     scores = user_games_collection.find({"game_id": game_id})
     return list(scores)
 
-@app.get("/do_i_score_below_average/{game_id}", response_model=bool)
-async def read_all_scores(game_id: int, token: str = Depends(oauth2_scheme)) -> bool:
+@app.get("/do_i_score_below_average/{game_id}")
+async def read_all_scores(game_id: int, token: str = Depends(oauth2_scheme)):
     """
     # Check if user score is below average
     
@@ -666,7 +666,7 @@ async def read_all_scores(game_id: int, token: str = Depends(oauth2_scheme)) -> 
 
     ## Returns
 
-    - `bool`: True if the score is below average, False otherwise
+    - `bool`: True if the score is lower than the average
 
     ## Raises
 
@@ -685,9 +685,15 @@ async def read_all_scores(game_id: int, token: str = Depends(oauth2_scheme)) -> 
         raise HTTPException(status_code=404, detail="Game not found")
     user = await get_current_user(token)
     user_scores = user_games_collection.find({"game_id": game_id, "user_id": user["id"]})
+    if user_scores is None:
+        return HTTPException(status_code=404, detail="Have you played this game?")
     scores = [score["score"] for score in user_scores]
+    if scores == []:
+        return HTTPException(status_code=404, detail="Have you played this game?")
+    avg_user_score = sum(scores) / len(scores)
     all_game_scores = user_games_collection.find({"game_id": game_id})
-    avg_score = sum([score["score"] for score in all_game_scores]) / all_game_scores.count()
-    if scores[-1] < avg_score:
+    n = len(list(all_game_scores))
+    avg_score = sum([score["score"] for score in all_game_scores]) / n
+    if avg_score > avg_user_score: 
         return True
     return False

@@ -70,3 +70,6 @@ print(requests.get('http://127.0.0.1:8000', headers=headers).text)
 #     ]
 # })
 # print(response.text)
+
+response = requests.get('http://127.0.0.1:8000/do_i_score_below_average/3', headers=headers)
+print(response.text)
