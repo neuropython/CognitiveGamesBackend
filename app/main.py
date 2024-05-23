@@ -275,8 +275,8 @@ async def read_users() -> List[User]:
     users = users_collection.find()
     return list(users)
 
-@app.get("/users/{user_id}/games")
-async def read_user_games(user_id: int,token: str = Depends(oauth2_scheme)) -> List[UserGames]:
+@app.get("/users/games")
+async def read_user_games(token: str = Depends(oauth2_scheme)) -> List[UserGames]:
     """
     # Read user games
     
@@ -284,7 +284,6 @@ async def read_user_games(user_id: int,token: str = Depends(oauth2_scheme)) -> L
     
     ## Parameters
     
-    - `user_id` (int): The user ID (inside the URL)
     - `token` (str): The token (header)
     
     ## Returns
@@ -293,16 +292,38 @@ async def read_user_games(user_id: int,token: str = Depends(oauth2_scheme)) -> L
     
     ## Raises
     
-    - `HTTPException`: If the user is not found
     - `HTTPException`: If the user is unauthorized
     """
-    user = users_collection.find_one({"id": user_id})
     curret_user = await get_current_user(token)
-    if curret_user["id"] != user_id:
-        raise HTTPException(status_code=401, detail="Unauthorized")
-    if user is None:
-        raise HTTPException(status_code=404, detail="User not found")
+    user_id = curret_user["id"]
     user_games = user_games_collection.find({"user_id": user_id})
+    return list(user_games)
+
+@app.get("/users/games/{game_id}")
+async def read_user_games(game_id:int, token: str = Depends(oauth2_scheme)) -> List[UserGames]:
+    """
+    # Read user games
+    
+    This endpoint reads all games related to a user.
+    
+    ## Parameters
+    
+    - `token` (str): The token (header)
+    
+    ## Returns
+    
+    - `List[UserGames]`: The list of games
+    
+    ## Raises
+    
+    - `HTTPException`: If game is not found
+    """
+    curret_user = await get_current_user(token)
+    user_id = curret_user["id"]
+    check_if_game_exists = games_collection.find_one({"id": game_id})
+    if check_if_game_exists is None:
+        raise HTTPException(status_code=404, detail="Game not found")
+    user_games = user_games_collection.find({"user_id": user_id, "game_id": game_id})
     return list(user_games)
 
 @app.get("/games")
@@ -471,11 +492,11 @@ async def create_user_game_number(score: CardsGameInput, token: str = Depends(oa
     Create a new user game score.
 
     This endpoint allows you to create a new user game score for the memory game. 
-    It calculates the score based on the user's answers and the correct answers, 
+    It calculates the score based on the user's answers, 
     and then stores the score in the database.
 
     Args:
-    score (CardsGameInput): The user's answers and the correct answers for the game.
+    score (CardsGameInput): The user's answers for the game.
     token (str, optional): The user's authentication token. Defaults to Depends(oauth2_scheme).
 
     Returns:
